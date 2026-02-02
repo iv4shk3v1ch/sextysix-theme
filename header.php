@@ -57,8 +57,68 @@ if ( apply_filters( 'astra_header_profile_gmpg_link', true ) ) {
 >
 	<?php
 	astra_header_before();
+	?>
+	<header class="ssx-header" role="banner">
+		<div class="ssx-container">
+			<div class="ssx-header__inner">
+				<nav class="ssx-header__nav ssx-header__nav--left" aria-label="<?php esc_attr_e( 'Primary', 'sextysix' ); ?>">
+					<?php
+					if ( has_nav_menu( 'ssx_header_left' ) ) {
+						wp_nav_menu(
+							array(
+								'theme_location' => 'ssx_header_left',
+								'container'      => false,
+								'menu_class'     => 'ssx-nav',
+								'fallback_cb'    => false,
+							)
+						);
+					} else {
+						$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
+						?>
+						<a class="ssx-nav__link" href="<?php echo esc_url( $shop_url ); ?>">
+							<?php echo esc_html__( 'КАТАЛОГ', 'sextysix' ); ?>
+						</a>
+						<?php
+					}
+					?>
+				</nav>
 
-	astra_header();
+				<div class="ssx-header__logo">
+					<?php
+					if ( function_exists( 'the_custom_logo' ) && has_custom_logo() ) {
+						the_custom_logo();
+					} else {
+						$logo_path = get_stylesheet_directory() . '/assets/svg/logo.svg';
+						$logo_uri  = get_stylesheet_directory_uri() . '/assets/svg/logo.svg';
+						if ( file_exists( $logo_path ) ) {
+							?>
+							<a class="ssx-logo-link" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+								<img src="<?php echo esc_url( $logo_uri ); ?>" alt="<?php echo esc_attr( get_bloginfo( 'name' ) ); ?>">
+							</a>
+							<?php
+						} else {
+							?>
+							<a class="ssx-logo-text" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+								<?php echo esc_html( get_bloginfo( 'name' ) ); ?>
+							</a>
+							<?php
+						}
+					}
+					?>
+				</div>
+
+				<div class="ssx-header__nav ssx-header__nav--right">
+					<?php
+					$cart_url = function_exists( 'wc_get_cart_url' ) ? wc_get_cart_url() : home_url( '/cart/' );
+					?>
+					<a class="ssx-nav__link ssx-header__cart" href="<?php echo esc_url( $cart_url ); ?>">
+						<?php echo esc_html__( 'КОРЗИНА ( . )', 'sextysix' ); ?>
+					</a>
+				</div>
+			</div>
+		</div>
+	</header>
+	<?php
 
 	astra_header_after();
 

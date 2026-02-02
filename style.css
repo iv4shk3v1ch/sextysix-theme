@@ -1,10 +1,7 @@
 /**
-Theme Name: Astra
-Theme URI: https://wpastra.com/
+Theme Name: sextysix-theme
 Author: Brainstorm Force
-Author URI: https://wpastra.com/about/?utm_source=theme_preview&utm_medium=author_link&utm_campaign=astra_theme
-Description: The Astra WordPress theme is lightning-fast and highly customizable. It has over 1 million downloads and the only theme in the world with 6,000+ five-star reviews! It’s ideal for professional web designers, solopreneurs, small businesses, eCommerce, membership sites and any type of website. It offers special features and templates so it works perfectly with all page builders like Spectra, Elementor, Beaver Builder, etc. Fast performance, clean code, mobile-first design and schema markup are all built-in, making the theme exceptionally SEO-friendly. It’s fully compatible with WooCommerce, SureCart and other eCommerce plugins and comes with lots of store-friendly features and templates. Astra also provides expert support for free users. A dedicated team of fully trained WordPress experts are on hand to help with every aspect of the theme. Try the live demo of Astra: https://zipwp.org/themes/astra/
-Version: 4.12.1
+Description: custom theme for sextysix ecommerce website
 Requires at least: 5.3
 WC requires at least: 3.0
 WC tested up to: 9.6
@@ -12,15 +9,15 @@ Tested up to: 6.9
 Requires PHP: 5.3
 License: GNU General Public License v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Text Domain: astra
+Text Domain: sextysix-theme
 Domain Path: /languages
 Tags: custom-menu, custom-logo, entertainment, one-column, two-columns, left-sidebar, e-commerce, right-sidebar, custom-colors, editor-style, featured-images, full-width-template, microformats, post-formats, rtl-language-support, theme-options, threaded-comments, translation-ready, blog
 AMP: true
 
-Astra WordPress Theme, Copyright 2020 WPAstra.
-Astra is distributed under the terms of the GNU GPL.
+sextysix-theme WordPress Theme, Copyright 2020 WPAstra.
+sextysix-theme is distributed under the terms of the GNU GPL.
 
-Astra is based on Underscores https://underscores.me/, (C) 2012-2020 Automattic, Inc.
+sextysix-theme is based on Underscores https://underscores.me/, (C) 2012-2020 Automattic, Inc.
 Underscores is distributed under the terms of the GNU GPL v2 or later.
 
 Normalizing styles have been helped along thanks to the fine work of.

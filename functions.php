@@ -202,3 +202,29 @@ require_once ASTRA_THEME_DIR . 'inc/core/markup/class-astra-markup.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-filters.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-hooks.php';
 require_once ASTRA_THEME_DIR . 'inc/core/deprecated/deprecated-functions.php';
+
+/**
+ * Sextysix theme base assets.
+ */
+function sextysix_enqueue_base_assets() {
+	$css_path = get_stylesheet_directory() . '/assets/css/sextysix.css';
+	$css_uri  = get_stylesheet_directory_uri() . '/assets/css/sextysix.css';
+	$version  = file_exists( $css_path ) ? filemtime( $css_path ) : ASTRA_THEME_VERSION;
+
+	wp_enqueue_style( 'sextysix-base', $css_uri, array(), $version );
+}
+add_action( 'wp_enqueue_scripts', 'sextysix_enqueue_base_assets', 20 );
+
+/**
+ * Register Sextysix menus.
+ */
+function sextysix_register_menus() {
+	register_nav_menus(
+		array(
+			'ssx_header_left'   => __( 'Header Left', 'sextysix' ),
+			'ssx_footer_service'=> __( 'Footer Service', 'sextysix' ),
+			'ssx_footer_social' => __( 'Footer Social', 'sextysix' ),
+		)
+	);
+}
+add_action( 'after_setup_theme', 'sextysix_register_menus' );
