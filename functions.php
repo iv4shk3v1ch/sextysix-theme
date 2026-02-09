@@ -212,6 +212,29 @@ function sextysix_enqueue_base_assets() {
 	$version  = file_exists( $css_path ) ? filemtime( $css_path ) : ASTRA_THEME_VERSION;
 
 	wp_enqueue_style( 'sextysix-base', $css_uri, array(), $version );
+
+	$scale_path = get_stylesheet_directory() . '/assets/js/sextysix-scale.js';
+	if ( file_exists( $scale_path ) ) {
+		$scale_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-scale.js';
+		$scale_version = filemtime( $scale_path );
+		wp_enqueue_script( 'sextysix-scale', $scale_uri, array(), $scale_version, true );
+	}
+
+	if ( function_exists( 'is_product' ) && is_product() ) {
+		$accordion_path = get_stylesheet_directory() . '/assets/js/sextysix-accordion.js';
+		if ( file_exists( $accordion_path ) ) {
+			$accordion_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-accordion.js';
+			$accordion_version = filemtime( $accordion_path );
+			wp_enqueue_script( 'sextysix-accordion', $accordion_uri, array(), $accordion_version, true );
+		}
+
+		$variations_path = get_stylesheet_directory() . '/assets/js/sextysix-variations.js';
+		if ( file_exists( $variations_path ) ) {
+			$variations_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-variations.js';
+			$variations_version = filemtime( $variations_path );
+			wp_enqueue_script( 'sextysix-variations', $variations_uri, array( 'jquery' ), $variations_version, true );
+		}
+	}
 }
 add_action( 'wp_enqueue_scripts', 'sextysix_enqueue_base_assets', 20 );
 
@@ -228,3 +251,209 @@ function sextysix_register_menus() {
 	);
 }
 add_action( 'after_setup_theme', 'sextysix_register_menus' );
+
+/**
+ * Disable Astra scroll-to-top.
+ */
+add_filter( 'astra_get_option_scroll-to-top-enable', '__return_false' );
+
+/**
+ * WooCommerce catalog cleanup.
+ */
+function sextysix_woocommerce_catalog_cleanup() {
+	if ( ! class_exists( 'WooCommerce' ) ) {
+		return;
+	}
+
+	remove_action( 'woocommerce_before_shop_loop', 'woocommerce_result_count', 20 );
+	remove_action( 'woocommerce_before_shop_loop', 'woocommerce_catalog_ordering', 30 );
+	remove_action( 'woocommerce_after_shop_loop', 'woocommerce_pagination', 10 );
+}
+add_action( 'wp', 'sextysix_woocommerce_catalog_cleanup' );
+
+add_filter( 'woocommerce_show_page_title', '__return_false' );
+
+/**
+ * Single product tweaks.
+ */
+function sextysix_is_product_in_cart( $product_id ) {
+	if ( ! class_exists( 'WooCommerce' ) || null === WC()->cart ) {
+		return false;
+	}
+
+	foreach ( WC()->cart->get_cart() as $cart_item ) {
+		if ( isset( $cart_item['product_id'] ) && (int) $cart_item['product_id'] === (int) $product_id ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function sextysix_single_product_setup() {
+	if ( ! is_product() ) {
+		return;
+	}
+
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_title', 5 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_excerpt', 20 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_add_to_cart', 30 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_meta', 40 );
+	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_sharing', 50 );
+	remove_action( 'woocommerce_after_single_product_summary', 'woocommerce_output_product_data_tabs', 10 );
+}
+add_action( 'wp', 'sextysix_single_product_setup' );
+
+function sextysix_output_product_accordion() {
+	if ( ! is_product() ) {
+		return;
+	}
+
+	$product_id  = get_the_ID();
+	$product     = wc_get_product( $product_id );
+	$description = $product ? $product->get_description() : '';
+	$excerpt     = $product ? $product->get_short_description() : '';
+
+	$sections = array(
+		array(
+			'key'     => 'description',
+			'title'   => __( 'ОПИСАНИЕ ТОВАРА', 'sextysix' ),
+			'content' => $description,
+		),
+		array(
+			'key'     => 'care',
+			'title'   => __( 'СОСТАВ И УХОД', 'sextysix' ),
+			'content' => get_post_meta( $product_id, 'ssx_care', true ),
+		),
+		array(
+			'key'     => 'size',
+			'title'   => __( 'РАЗМЕРНАЯ СЕТКА', 'sextysix' ),
+			'content' => get_post_meta( $product_id, 'ssx_size_guide', true ),
+		),
+		array(
+			'key'     => 'delivery',
+			'title'   => __( 'ДОСТАВКА И ВОЗВРАТ', 'sextysix' ),
+			'content' => get_post_meta( $product_id, 'ssx_delivery_returns', true ),
+		),
+		array(
+			'key'     => 'question',
+			'title'   => __( 'ЗАДАТЬ ВОПРОС ПРО ТОВАР', 'sextysix' ),
+			'content' => get_post_meta( $product_id, 'ssx_question', true ),
+		),
+	);
+
+	if ( empty( $sections[1]['content'] ) ) {
+		$sections[1]['content'] = $excerpt;
+	}
+
+	?>
+	<div class="ssx-accordion" data-ssx-accordion>
+		<?php foreach ( $sections as $section ) : ?>
+			<?php
+			$panel_id = 'ssx-accordion-' . esc_attr( $section['key'] );
+			$content  = trim( (string) $section['content'] );
+			if ( '' === $content ) {
+				$content = '&nbsp;';
+			}
+			?>
+			<div class="ssx-accordion__item">
+				<button
+					class="ssx-accordion__trigger"
+					type="button"
+					aria-expanded="false"
+					aria-controls="<?php echo esc_attr( $panel_id ); ?>"
+				>
+					<span class="ssx-accordion__title"><?php echo esc_html( $section['title'] ); ?></span>
+					<span class="ssx-accordion__icon" aria-hidden="true"></span>
+				</button>
+				<div id="<?php echo esc_attr( $panel_id ); ?>" class="ssx-accordion__panel" hidden>
+					<?php echo wp_kses_post( wpautop( $content ) ); ?>
+				</div>
+			</div>
+		<?php endforeach; ?>
+	</div>
+	<?php
+}
+
+add_filter(
+	'woocommerce_is_sold_individually',
+	function( $sold, $product ) {
+		if ( is_product() ) {
+			return true;
+		}
+		return $sold;
+	},
+	10,
+	2
+);
+
+add_filter(
+	'woocommerce_product_single_add_to_cart_text',
+	function( $text ) {
+		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
+			return __( 'ОФОРМИТЬ ЗАКАЗ', 'sextysix' );
+		}
+		return __( 'ДОБАВИТЬ В КОРЗИНУ', 'sextysix' );
+	}
+);
+
+add_filter(
+	'body_class',
+	function( $classes ) {
+		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
+			$classes[] = 'ssx-product-in-cart';
+		}
+		return $classes;
+	}
+);
+
+add_filter(
+	'woocommerce_output_related_products_args',
+	function( $args ) {
+		$args['posts_per_page'] = 4;
+		$args['columns']        = 4;
+		return $args;
+	}
+);
+
+add_filter(
+	'woocommerce_get_image_size_single',
+	function() {
+		return array(
+			'width'  => 1200,
+			'height' => 0,
+			'crop'   => 0,
+		);
+	}
+);
+
+add_filter(
+	'woocommerce_get_image_size_gallery_thumbnail',
+	function() {
+		return array(
+			'width'  => 91,
+			'height' => 120,
+			'crop'   => 1,
+		);
+	}
+);
+
+/**
+ * Product badge helper.
+ *
+ * Uses "best-seller" product tag or Featured flag.
+ */
+function sextysix_get_product_badge_text( $product ) {
+	if ( ! $product instanceof WC_Product ) {
+		return '';
+	}
+
+	$is_best_seller = has_term( 'best-seller', 'product_tag', $product->get_id() );
+	if ( $is_best_seller || $product->is_featured() ) {
+		return __( 'BEST SELLER', 'sextysix' );
+	}
+
+	return '';
+}

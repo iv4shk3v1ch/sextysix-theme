@@ -58,7 +58,7 @@ if ( apply_filters( 'astra_header_profile_gmpg_link', true ) ) {
 	<?php
 	astra_header_before();
 	?>
-	<header class="ssx-header" role="banner">
+	<header class="ssx-header<?php echo is_front_page() ? ' ssx-header--transparent' : ''; ?>" role="banner">
 		<div class="ssx-container">
 			<div class="ssx-header__inner">
 				<nav class="ssx-header__nav ssx-header__nav--left" aria-label="<?php esc_attr_e( 'Primary', 'sextysix' ); ?>">

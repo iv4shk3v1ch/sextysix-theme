@@ -28,7 +28,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 			<div class="ssx-footer__top">
 				<div class="ssx-footer__col ssx-footer__newsletter">
 					<p class="ssx-footer__title"><?php echo esc_html__( 'РАССЫЛКА', 'sextysix' ); ?></p>
-					<form class="ssx-footer__form" action="#" method="post">
+					<form class="ssx-footer__form" action="#" method="post" novalidate>
 						<label class="screen-reader-text" for="ssx-footer-email"><?php echo esc_html__( 'Email address', 'sextysix' ); ?></label>
 						<input
 							type="email"
