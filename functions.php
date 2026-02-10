@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Astra functions and definitions
  *
@@ -295,6 +295,7 @@ function sextysix_single_product_setup() {
 		return;
 	}
 
+	remove_action( 'woocommerce_before_single_product', 'woocommerce_output_all_notices', 10 );
 	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_title', 5 );
 	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_rating', 10 );
 	remove_action( 'woocommerce_single_product_summary', 'woocommerce_template_single_price', 10 );
@@ -400,12 +401,47 @@ add_filter(
 );
 
 add_filter(
+	'woocommerce_add_to_cart_redirect',
+	function( $url ) {
+		if ( ! is_product() || empty( $_REQUEST['add-to-cart'] ) || empty( $_REQUEST['ssx_checkout'] ) ) {
+			return $url;
+		}
+
+		$product_id = (int) $_REQUEST['add-to-cart'];
+		if ( $product_id && sextysix_is_product_in_cart( $product_id ) ) {
+			return wc_get_checkout_url();
+		}
+
+		return $url;
+	}
+);
+
+add_filter(
 	'body_class',
 	function( $classes ) {
 		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
 			$classes[] = 'ssx-product-in-cart';
 		}
 		return $classes;
+	}
+);
+
+add_action(
+	'woocommerce_before_add_to_cart_button',
+	function() {
+		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
+			echo '<input type="hidden" name="ssx_checkout" value="1" />';
+		}
+	}
+);
+
+add_filter(
+	'woocommerce_add_to_cart_form_action',
+	function( $url ) {
+		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
+			return wc_get_checkout_url();
+		}
+		return $url;
 	}
 );
 
@@ -417,6 +453,15 @@ add_filter(
 		return $args;
 	}
 );
+
+add_filter(
+	'woocommerce_product_related_products_heading',
+	function() {
+		return __( 'ВАМ МОЖЕТ ПОНРАВИТЬСЯ', 'sextysix' );
+	}
+);
+
+add_filter( 'woocommerce_reset_variations_link', '__return_empty_string' );
 
 add_filter(
 	'woocommerce_get_image_size_single',
@@ -439,6 +484,217 @@ add_filter(
 		);
 	}
 );
+
+/**
+ * Color attribute swatches (pa_color).
+ */
+function sextysix_color_term_fields_add( $taxonomy ) {
+	?>
+	<div class="form-field term-group">
+		<label for="ssx_color_hex"><?php esc_html_e( 'Color Hex', 'sextysix' ); ?></label>
+		<input type="text" id="ssx_color_hex" name="ssx_color_hex" value="" placeholder="#2D2D2D" />
+		<p class="description"><?php esc_html_e( 'Hex color used for swatches.', 'sextysix' ); ?></p>
+	</div>
+	<?php
+}
+add_action( 'pa_color_add_form_fields', 'sextysix_color_term_fields_add' );
+
+function sextysix_color_term_fields_edit( $term ) {
+	$value = get_term_meta( $term->term_id, 'ssx_color_hex', true );
+	?>
+	<tr class="form-field term-group-wrap">
+		<th scope="row"><label for="ssx_color_hex"><?php esc_html_e( 'Color Hex', 'sextysix' ); ?></label></th>
+		<td>
+			<input type="text" id="ssx_color_hex" name="ssx_color_hex" value="<?php echo esc_attr( $value ); ?>" placeholder="#2D2D2D" />
+			<p class="description"><?php esc_html_e( 'Hex color used for swatches.', 'sextysix' ); ?></p>
+		</td>
+	</tr>
+	<?php
+}
+add_action( 'pa_color_edit_form_fields', 'sextysix_color_term_fields_edit' );
+
+function sextysix_color_term_fields_save( $term_id ) {
+	if ( ! isset( $_POST['ssx_color_hex'] ) ) {
+		return;
+	}
+
+	$hex = sanitize_hex_color( wp_unslash( $_POST['ssx_color_hex'] ) );
+	if ( ! $hex ) {
+		delete_term_meta( $term_id, 'ssx_color_hex' );
+		return;
+	}
+
+	update_term_meta( $term_id, 'ssx_color_hex', $hex );
+}
+add_action( 'created_pa_color', 'sextysix_color_term_fields_save' );
+add_action( 'edited_pa_color', 'sextysix_color_term_fields_save' );
+
+function sextysix_get_color_swatches_map( $product_id, $options, $attribute ) {
+	$color_map = array();
+	$option_keys = array();
+
+	foreach ( (array) $options as $option ) {
+		$option_keys[] = (string) $option;
+		$option_keys[] = strtolower( (string) $option );
+		$option_keys[] = sanitize_title( (string) $option );
+	}
+
+	if ( taxonomy_exists( $attribute ) ) {
+		foreach ( $options as $option ) {
+			$term = get_term_by( 'slug', $option, $attribute );
+			if ( $term && ! is_wp_error( $term ) ) {
+				$hex = get_term_meta( $term->term_id, 'ssx_color_hex', true );
+				if ( $hex ) {
+					$color_map[ $option ] = $hex;
+				}
+			}
+		}
+	}
+
+	if ( empty( $color_map ) && $product_id ) {
+		$raw = get_post_meta( $product_id, 'ssx_color_swatches', true );
+		if ( is_array( $raw ) ) {
+			foreach ( $raw as $row ) {
+				if ( empty( $row['label'] ) || empty( $row['hex'] ) ) {
+					continue;
+				}
+				$hex = sanitize_hex_color( $row['hex'] );
+				if ( ! $hex ) {
+					continue;
+				}
+				$key = sanitize_title( $row['label'] );
+				$label = (string) $row['label'];
+				$label_lower = strtolower( $label );
+				if ( ! in_array( $label, $option_keys, true )
+					&& ! in_array( $label_lower, $option_keys, true )
+					&& ! in_array( $key, $option_keys, true )
+				) {
+					continue;
+				}
+				$color_map[ $key ] = $hex;
+				$color_map[ $label ] = $hex;
+				$color_map[ $label_lower ] = $hex;
+			}
+		}
+	}
+
+	return $color_map;
+}
+
+function sextysix_add_color_swatches_data( $html, $args ) {
+	if ( empty( $args['attribute'] ) ) {
+		return $html;
+	}
+
+	$attribute = $args['attribute'];
+
+	$options = isset( $args['options'] ) ? (array) $args['options'] : array();
+	if ( empty( $options ) ) {
+		return $html;
+	}
+
+	$product_id = 0;
+	if ( ! empty( $args['product'] ) && $args['product'] instanceof WC_Product ) {
+		$product_id = $args['product']->get_id();
+	} elseif ( function_exists( 'is_product' ) && is_product() ) {
+		$product_id = get_the_ID();
+	}
+
+	$color_map = sextysix_get_color_swatches_map( $product_id, $options, $attribute );
+	if ( empty( $color_map ) ) {
+		return $html;
+	}
+
+	$attrs = sprintf(
+		' data-ssx-type="color" data-ssx-color-map=\'%s\'',
+		esc_attr( wp_json_encode( $color_map ) )
+	);
+
+	return preg_replace( '/<select([^>]*)>/', '<select$1' . $attrs . '>', $html, 1 );
+}
+add_filter( 'woocommerce_dropdown_variation_attribute_options_html', 'sextysix_add_color_swatches_data', 10, 2 );
+
+function sextysix_color_swatches_metabox() {
+	add_meta_box(
+		'ssx-color-swatches',
+		__( 'Color Swatches', 'sextysix' ),
+		'sextysix_render_color_swatches_metabox',
+		'product',
+		'side',
+		'default'
+	);
+}
+add_action( 'add_meta_boxes', 'sextysix_color_swatches_metabox' );
+
+function sextysix_render_color_swatches_metabox( $post ) {
+	wp_nonce_field( 'ssx_color_swatches_save', 'ssx_color_swatches_nonce' );
+	$rows = get_post_meta( $post->ID, 'ssx_color_swatches', true );
+	if ( ! is_array( $rows ) ) {
+		$rows = array();
+	}
+	$count = max( 6, count( $rows ) );
+	?>
+	<p><?php esc_html_e( 'Match color names to hex values. Use the same label as the variation option.', 'sextysix' ); ?></p>
+	<table class="widefat striped">
+		<tbody>
+		<?php for ( $i = 0; $i < $count; $i++ ) : ?>
+			<?php
+			$label = $rows[ $i ]['label'] ?? '';
+			$hex   = $rows[ $i ]['hex'] ?? '';
+			?>
+			<tr>
+				<td>
+					<input type="text" name="ssx_color_swatches[label][]" value="<?php echo esc_attr( $label ); ?>" placeholder="<?php esc_attr_e( 'MILKY SKY', 'sextysix' ); ?>" />
+				</td>
+				<td>
+					<input type="text" name="ssx_color_swatches[hex][]" value="<?php echo esc_attr( $hex ); ?>" placeholder="#D9D9D9" />
+				</td>
+			</tr>
+		<?php endfor; ?>
+		</tbody>
+	</table>
+	<?php
+}
+
+function sextysix_save_color_swatches_metabox( $post_id ) {
+	if ( ! isset( $_POST['ssx_color_swatches_nonce'] ) || ! wp_verify_nonce( wp_unslash( $_POST['ssx_color_swatches_nonce'] ), 'ssx_color_swatches_save' ) ) {
+		return;
+	}
+
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+
+	if ( ! current_user_can( 'edit_post', $post_id ) ) {
+		return;
+	}
+
+	$labels = isset( $_POST['ssx_color_swatches']['label'] ) ? (array) $_POST['ssx_color_swatches']['label'] : array();
+	$hexes  = isset( $_POST['ssx_color_swatches']['hex'] ) ? (array) $_POST['ssx_color_swatches']['hex'] : array();
+
+	$rows = array();
+	$max  = max( count( $labels ), count( $hexes ) );
+	for ( $i = 0; $i < $max; $i++ ) {
+		$label = isset( $labels[ $i ] ) ? sanitize_text_field( wp_unslash( $labels[ $i ] ) ) : '';
+		$hex   = isset( $hexes[ $i ] ) ? sanitize_text_field( wp_unslash( $hexes[ $i ] ) ) : '';
+		$hex   = sanitize_hex_color( $hex );
+		if ( '' === $label || ! $hex ) {
+			continue;
+		}
+		$rows[] = array(
+			'label' => $label,
+			'hex'   => $hex,
+		);
+	}
+
+	if ( empty( $rows ) ) {
+		delete_post_meta( $post_id, 'ssx_color_swatches' );
+		return;
+	}
+
+	update_post_meta( $post_id, 'ssx_color_swatches', $rows );
+}
+add_action( 'save_post_product', 'sextysix_save_color_swatches_metabox' );
 
 /**
  * Product badge helper.
