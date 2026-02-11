@@ -422,6 +422,15 @@ add_filter(
 		if ( is_product() && sextysix_is_product_in_cart( get_the_ID() ) ) {
 			$classes[] = 'ssx-product-in-cart';
 		}
+		if ( is_page( 'payments' ) || is_page( 'delivery-returns' ) ) {
+			$classes[] = 'ssx-legal-page';
+		}
+		if ( function_exists( 'is_cart' ) && is_cart() ) {
+			$classes[] = 'ssx-cart-page';
+		}
+		if ( function_exists( 'is_checkout' ) && is_checkout() ) {
+			$classes[] = 'ssx-checkout-page';
+		}
 		return $classes;
 	}
 );
