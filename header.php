@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * The header for Astra Theme.
  *
@@ -62,6 +62,9 @@ if ( apply_filters( 'astra_header_profile_gmpg_link', true ) ) {
 		<div class="ssx-container">
 			<div class="ssx-header__inner">
 				<nav class="ssx-header__nav ssx-header__nav--left" aria-label="<?php esc_attr_e( 'Primary', 'sextysix' ); ?>">
+					<button class="ssx-menu-toggle" type="button" aria-controls="ssx-mobile-menu" aria-expanded="false">
+						<?php echo esc_html__( 'Меню', 'sextysix' ); ?>
+					</button>
 					<?php
 					if ( has_nav_menu( 'ssx_header_left' ) ) {
 						wp_nav_menu(
@@ -118,6 +121,73 @@ if ( apply_filters( 'astra_header_profile_gmpg_link', true ) ) {
 			</div>
 		</div>
 	</header>
+	<div class="ssx-mobile-menu" id="ssx-mobile-menu" aria-hidden="true">
+		<div class="ssx-mobile-menu__panel">
+			<div class="ssx-mobile-menu__header">
+				<button class="ssx-mobile-menu__close" type="button">
+	<?php
+	$close_path = get_stylesheet_directory() . '/assets/svg/Close.svg';
+	$close_uri  = get_stylesheet_directory_uri() . '/assets/svg/Close.svg';
+	?>
+	<?php echo esc_html__( 'ЗАКРЫТЬ', 'sextysix' ); ?>
+	<?php if ( file_exists( $close_path ) ) : ?>
+		<img class="ssx-mobile-menu__close-icon" src="<?php echo esc_url( $close_uri ); ?>" alt="">
+	<?php endif; ?>
+</button>
+			</div>
+			<nav class="ssx-mobile-menu__nav" aria-label="<?php esc_attr_e( 'Mobile', 'sextysix' ); ?>">
+				<?php
+				$shop_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'shop' ) : home_url( '/' );
+				?>
+				<a class="ssx-mobile-menu__link" href="<?php echo esc_url( $shop_url ); ?>">
+					<?php echo esc_html__( 'КАТАЛОГ', 'sextysix' ); ?>
+				</a>
+				<div class="ssx-mobile-menu__section">
+					<details open>
+						<summary><?php echo esc_html__( ' СЕРВИС', 'sextysix' ); ?></summary>
+						<?php
+						if ( has_nav_menu( 'ssx_footer_service' ) ) {
+							wp_nav_menu(
+								array(
+									'theme_location' => 'ssx_footer_service',
+									'container'      => false,
+									'menu_class'     => 'ssx-mobile-menu__list',
+									'fallback_cb'    => false,
+								)
+							);
+						}
+						?>
+					</details>
+				</div>
+				<div class="ssx-mobile-menu__section">
+					<details>
+						<summary><?php echo esc_html__( 'СЛЕДИТЕ ЗА НАМИ', 'sextysix' ); ?></summary>
+						<?php
+						if ( has_nav_menu( 'ssx_footer_social' ) ) {
+							wp_nav_menu(
+								array(
+									'theme_location' => 'ssx_footer_social',
+									'container'      => false,
+									'menu_class'     => 'ssx-mobile-menu__list',
+									'fallback_cb'    => false,
+								)
+							);
+						}
+						?>
+					</details>
+				</div>
+			</nav>
+			<?php
+			$flower_path = get_stylesheet_directory() . '/assets/img/flower.png';
+			$flower_uri  = get_stylesheet_directory_uri() . '/assets/img/flower.png';
+			if ( file_exists( $flower_path ) ) {
+				?>
+				<img class="ssx-mobile-menu__flower" src="<?php echo esc_url( $flower_uri ); ?>" alt="">
+				<?php
+			}
+			?>
+		</div>
+	</div>
 	<?php
 
 	astra_header_after();
@@ -127,3 +197,4 @@ if ( apply_filters( 'astra_header_profile_gmpg_link', true ) ) {
 	<div id="content" class="site-content">
 		<div class="ast-container">
 		<?php astra_content_top(); ?>
+

@@ -28,6 +28,28 @@
     valueSpan.textContent = valueText ? `: ${valueText}` : "";
   };
 
+  const getVariations = (form) => {
+    if (!form) return [];
+    const raw = form.dataset.product_variations;
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      return [];
+    }
+  };
+
+  const getCurrentSelections = (form) => {
+    const selections = {};
+    if (!form) return selections;
+    form.querySelectorAll("select").forEach((sel) => {
+      if (sel.name) {
+        selections[sel.name] = sel.value || "";
+      }
+    });
+    return selections;
+  };
+
   const enhanceSelect = (select) => {
     if (select.dataset.ssxEnhanced) return;
     select.dataset.ssxEnhanced = "true";
@@ -82,6 +104,10 @@
     });
 
     const updateButtons = () => {
+      const form = select.closest("form.variations_form");
+      const variations = getVariations(form);
+      const selections = getCurrentSelections(form);
+
       if (isColor) {
         const selected = options.find((opt) => opt.value === select.value);
         updateLabelValue(select, selected ? selected.text : "");
@@ -94,7 +120,23 @@
           `button[data-value="${escapeValue(opt.value)}"]`
         );
         if (!button) return;
-        button.disabled = opt.disabled;
+        let disabled = opt.disabled;
+        if (variations.length && select.name) {
+          const attrName = select.name;
+          const isAvailable = variations.some((variation) => {
+            if (!variation || !variation.attributes) return false;
+            if (variation.attributes[attrName] !== opt.value) return false;
+            if (!variation.is_in_stock) return false;
+            return Object.keys(variation.attributes).every((key) => {
+              if (key === attrName) return true;
+              const selectedValue = selections[key];
+              if (!selectedValue) return true;
+              return variation.attributes[key] === selectedValue;
+            });
+          });
+          disabled = !isAvailable;
+        }
+        button.disabled = disabled;
         button.classList.toggle("is-active", select.value === opt.value);
       });
     };

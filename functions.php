@@ -234,6 +234,27 @@ function sextysix_enqueue_base_assets() {
 			$variations_version = filemtime( $variations_path );
 			wp_enqueue_script( 'sextysix-variations', $variations_uri, array( 'jquery' ), $variations_version, true );
 		}
+
+		$related_path = get_stylesheet_directory() . '/assets/js/sextysix-related.js';
+		if ( file_exists( $related_path ) ) {
+			$related_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-related.js';
+			$related_version = filemtime( $related_path );
+			wp_enqueue_script( 'sextysix-related', $related_uri, array(), $related_version, true );
+		}
+	}
+
+	$mobile_menu_path = get_stylesheet_directory() . '/assets/js/sextysix-mobile-menu.js';
+	if ( file_exists( $mobile_menu_path ) ) {
+		$mobile_menu_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-mobile-menu.js';
+		$mobile_menu_version = filemtime( $mobile_menu_path );
+		wp_enqueue_script( 'sextysix-mobile-menu', $mobile_menu_uri, array(), $mobile_menu_version, true );
+	}
+
+	$cleanup_path = get_stylesheet_directory() . '/assets/js/sextysix-cleanup.js';
+	if ( file_exists( $cleanup_path ) ) {
+		$cleanup_uri     = get_stylesheet_directory_uri() . '/assets/js/sextysix-cleanup.js';
+		$cleanup_version = filemtime( $cleanup_path );
+		wp_enqueue_script( 'sextysix-cleanup', $cleanup_uri, array(), $cleanup_version, true );
 	}
 }
 add_action( 'wp_enqueue_scripts', 'sextysix_enqueue_base_assets', 20 );
@@ -457,7 +478,8 @@ add_filter(
 add_filter(
 	'woocommerce_output_related_products_args',
 	function( $args ) {
-		$args['posts_per_page'] = 4;
+		$is_mobile = function_exists( 'wp_is_mobile' ) && wp_is_mobile();
+		$args['posts_per_page'] = $is_mobile ? 20 : 4;
 		$args['columns']        = 4;
 		return $args;
 	}
